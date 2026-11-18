@@ -1,0 +1,1393 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>La Paz Batchoy Express — Order & Kitchen POS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        broth: {
+                            50: '#FDF8F3',
+                            100: '#F9EDE0',
+                            200: '#F2D7BC',
+                            300: '#E8BA8E',
+                            400: '#DD965B',
+                            500: '#D47A36',
+                            600: '#B85F24',
+                            700: '#94471D',
+                            800: '#783A1C',
+                            900: '#2A1810',
+                            950: '#1A0F0A',
+                        },
+                        gold: {
+                            400: '#FBBF24',
+                            500: '#F59E0B',
+                            600: '#D97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for smooth mobile app feel */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(120, 58, 28, 0.25);
+            border-radius: 9999px;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.85); opacity: 0.8; }
+            70% { transform: scale(1.35); opacity: 0; }
+            100% { transform: scale(1.35); opacity: 0; }
+        }
+        .animate-pulse-ring {
+            animation: pulse-ring 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0.6; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="bg-stone-900 text-stone-900 min-h-screen flex justify-center items-start sm:py-4 selection:bg-amber-200 selection:text-broth-900">
+
+    <!-- Mobile App Shell Container -->
+    <div id="app-shell" class="w-full max-w-[440px] min-h-screen sm:min-h-[844px] sm:max-h-[880px] bg-broth-50 sm:rounded-[38px] sm:shadow-[0_25px_70px_-15px_rgba(0,0,0,0.75)] sm:border-[6px] sm:border-stone-800 flex flex-col relative overflow-hidden">
+        
+        <!-- Top Status & Mode Header -->
+        <header class="bg-broth-950 text-white px-4 pt-3.5 pb-3 sticky top-0 z-30 shadow-md">
+            <div class="flex items-center justify-between gap-2">
+                <!-- Brand Identity -->
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-amber-400 to-broth-600 flex items-center justify-center shadow-inner shrink-0">
+                        <!-- Custom Bowl SVG -->
+                        <svg class="w-5 h-5 text-broth-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 11h16a1 1 0 0 1 1 1v.5a7.5 7.5 0 0 1-7.5 7.5h-3A7.5 7.5 0 0 1 3 12.5V12a1 1 0 0 1 1-1Z"/>
+                            <path d="M8 20l-1 2h10l-1-2"/>
+                            <path d="M8 6c0-1.5 1-2 1-3.5"/>
+                            <path d="M12 6c0-1.5 1-2 1-3.5"/>
+                            <path d="M16 6c0-1.5 1-2 1-3.5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-display font-extrabold text-base leading-tight tracking-tight text-amber-50">La Paz Batchoy</h1>
+                        <div class="flex items-center gap-1.5">
+                            <span id="connection-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span id="connection-text" class="text-[11px] text-amber-200/80 font-medium">Connecting...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Role Switcher Pill (Customer vs Owner) -->
+                <div class="bg-broth-900 p-1 rounded-xl border border-broth-800 flex items-center text-xs font-semibold">
+                    <button id="btn-mode-customer" onclick="switchAppMode('customer')" class="px-2.5 py-1.5 rounded-lg bg-amber-500 text-broth-950 shadow-sm transition-all flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        Order
+                    </button>
+                    <button id="btn-mode-owner" onclick="switchAppMode('owner')" class="px-2.5 py-1.5 rounded-lg text-amber-200/80 hover:text-white transition-all flex items-center gap-1 relative">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                        Kitchen
+                        <span id="owner-pending-badge" class="hidden -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Toast Notification Banner -->
+        <div id="toast-container" class="fixed sm:absolute top-16 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[390px] pointer-events-none flex flex-col gap-2"></div>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 1: CUSTOMER ORDERING EXPERIENCE                      -->
+        <!-- ========================================================= -->
+        <main id="view-customer" class="flex-1 overflow-y-auto pb-28">
+            
+            <!-- Customer Sub-Navigation Tabs (Menu vs Active Order Tracker) -->
+            <div class="bg-white border-b border-broth-200/70 px-4 py-2.5 sticky top-0 z-20 flex items-center justify-between gap-2">
+                <div class="flex gap-2 w-full">
+                    <button id="cust-tab-menu" onclick="switchCustomerSubTab('menu')" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-broth-900 text-amber-50 shadow-sm transition-all flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                        Menu & Order
+                    </button>
+                    <button id="cust-tab-tracker" onclick="switchCustomerSubTab('tracker')" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-broth-100 text-broth-800 hover:bg-broth-200/70 transition-all flex items-center justify-center gap-1.5 relative">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        My Orders
+                        <span id="cust-active-dot" class="hidden w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW A: MENU CATALOG -->
+            <div id="customer-sub-menu" class="px-4 pt-4 space-y-5">
+                
+                <!-- Hero Banner -->
+                <div class="relative rounded-3xl overflow-hidden bg-gradient-to-br from-broth-900 via-broth-800 to-broth-950 text-white p-5 shadow-lg border border-broth-700/50">
+                    <div class="relative z-10 max-w-[78%]">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-2">Authentic Iloilo Recipe</span>
+                        <h2 class="font-display font-extrabold text-xl leading-snug text-white">Simmered 8 Hours. Served Piping Hot.</h2>
+                        <p class="text-xs text-amber-100/80 mt-1.5 leading-relaxed">Rich bone marrow broth, fresh miki noodles, crispy chicharon & garlic bits.</p>
+                    </div>
+                    <!-- Decorative Bowl SVG Art -->
+                    <div class="absolute -right-5 -bottom-5 w-32 h-32 rounded-full bg-amber-500/15 flex items-center justify-center border border-amber-400/20">
+                        <svg class="w-16 h-16 text-amber-400/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                            <path d="M3 11h18a1 1 0 0 1 1 1v.5a8.5 8.5 0 0 1-8.5 8.5h-3A8.5 8.5 0 0 1 2 12.5V12a1 1 0 0 1 1-1Z"/>
+                            <path d="M7 21l-1 2h12l-1-2"/>
+                            <path d="M7 7c0-2 1.5-2.5 1.5-4.5"/>
+                            <path d="M12 7c0-2 1.5-2.5 1.5-4.5"/>
+                            <path d="M17 7c0-2 1.5-2.5 1.5-4.5"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Category Filter Pills -->
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <button onclick="filterMenuCategory('all')" data-cat="all" class="menu-cat-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-broth-900 text-amber-50 whitespace-nowrap transition-all">All Items</button>
+                    <button onclick="filterMenuCategory('batchoy')" data-cat="batchoy" class="menu-cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-broth-800 border border-broth-200 whitespace-nowrap transition-all">Signature Batchoy</button>
+                    <button onclick="filterMenuCategory('sides')" data-cat="sides" class="menu-cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-broth-800 border border-broth-200 whitespace-nowrap transition-all">Add-ons & Puto</button>
+                    <button onclick="filterMenuCategory('drinks')" data-cat="drinks" class="menu-cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-broth-800 border border-broth-200 whitespace-nowrap transition-all">Drinks</button>
+                </div>
+
+                <!-- Menu Items Grid -->
+                <div id="menu-list-container" class="space-y-3 pb-4">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- SUB-VIEW B: LIVE ORDER TRACKER -->
+            <div id="customer-sub-tracker" class="hidden px-4 pt-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-display font-extrabold text-lg text-broth-950">Your Live Orders</h2>
+                        <p class="text-xs text-broth-700">Real-time status updates from our kitchen</p>
+                    </div>
+                    <button onclick="switchCustomerSubTab('menu')" class="text-xs font-bold text-broth-600 hover:text-broth-800 underline">+ Order More</button>
+                </div>
+
+                <div id="customer-orders-container" class="space-y-4">
+                    <!-- Populated dynamically via Firestore listener -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Floating Bottom Cart Bar (Customer Mode Only) -->
+        <div id="floating-cart-bar" class="hidden absolute bottom-4 left-4 right-4 z-30">
+            <button onclick="openCheckoutModal()" class="w-full bg-broth-950 hover:bg-broth-900 active:scale-[0.99] text-white p-3.5 rounded-2xl shadow-2xl border border-amber-500/30 flex items-center justify-between transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-broth-950 font-display font-extrabold text-sm flex items-center justify-center" id="cart-bar-count">0</div>
+                    <div class="text-left">
+                        <p class="text-xs text-amber-200/80 font-medium">View Basket & Checkout</p>
+                        <p class="text-sm font-bold text-white" id="cart-bar-type-hint">Select Dine-in, Take-out or Delivery</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="font-display font-extrabold text-base text-amber-400" id="cart-bar-total">₱0</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 2: SHOP OWNER / KITCHEN DASHBOARD                    -->
+        <!-- ========================================================= -->
+        <main id="view-owner" class="hidden flex-1 overflow-y-auto pb-8 bg-stone-100">
+            
+            <!-- Owner Sales Summary Header -->
+            <div class="bg-broth-900 text-white px-4 pt-4 pb-5 rounded-b-3xl shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Shop Owner POS</span>
+                        <h2 class="font-display font-extrabold text-lg leading-tight">Kitchen & Order Queue</h2>
+                    </div>
+                    <button onclick="openOwnerPinModal()" id="btn-lock-owner" class="text-[11px] bg-broth-800 hover:bg-broth-700 text-amber-200 px-2.5 py-1.5 rounded-lg border border-broth-700 flex items-center gap-1" title="PIN Lock Settings">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>PIN: 1234</span>
+                    </button>
+                </div>
+
+                <!-- 3 Metric Cards -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-broth-950/70 border border-broth-800 rounded-2xl p-2.5">
+                        <p class="text-[10px] text-amber-200/70 font-medium">Active Queue</p>
+                        <p id="stat-active-orders" class="font-display font-extrabold text-xl text-amber-400 mt-0.5">0</p>
+                    </div>
+                    <div class="bg-broth-950/70 border border-broth-800 rounded-2xl p-2.5">
+                        <p class="text-[10px] text-amber-200/70 font-medium">Total Orders</p>
+                        <p id="stat-total-orders" class="font-display font-extrabold text-xl text-white mt-0.5">0</p>
+                    </div>
+                    <div class="bg-broth-950/70 border border-broth-800 rounded-2xl p-2.5">
+                        <p class="text-[10px] text-amber-200/70 font-medium">Revenue</p>
+                        <p id="stat-total-revenue" class="font-display font-extrabold text-lg text-emerald-400 mt-0.5 truncate">₱0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Controls (Status & Order Type) -->
+            <div class="px-4 pt-3 space-y-2 sticky top-0 z-20 bg-stone-100/95 backdrop-blur-sm pb-2 border-b border-stone-200">
+                <!-- Status Tabs -->
+                <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
+                    <button onclick="setOwnerStatusFilter('active')" data-ostatus="active" class="owner-status-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-broth-900 text-amber-50 whitespace-nowrap">Active (<span id="count-active">0</span>)</button>
+                    <button onclick="setOwnerStatusFilter('pending')" data-ostatus="pending" class="owner-status-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-stone-700 border border-stone-200 whitespace-nowrap">Pending (<span id="count-pending">0</span>)</button>
+                    <button onclick="setOwnerStatusFilter('preparing')" data-ostatus="preparing" class="owner-status-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-stone-700 border border-stone-200 whitespace-nowrap">Preparing (<span id="count-preparing">0</span>)</button>
+                    <button onclick="setOwnerStatusFilter('ready')" data-ostatus="ready" class="owner-status-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-stone-700 border border-stone-200 whitespace-nowrap">Ready/Out (<span id="count-ready">0</span>)</button>
+                    <button onclick="setOwnerStatusFilter('completed')" data-ostatus="completed" class="owner-status-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-stone-700 border border-stone-200 whitespace-nowrap">Completed</button>
+                    <button onclick="setOwnerStatusFilter('all')" data-ostatus="all" class="owner-status-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-stone-700 border border-stone-200 whitespace-nowrap">All</button>
+                </div>
+
+                <!-- Order Type Filter -->
+                <div class="flex items-center gap-1.5 text-[11px]">
+                    <span class="text-stone-500 font-semibold mr-1">Type:</span>
+                    <button onclick="setOwnerTypeFilter('all')" data-otype="all" class="owner-type-pill px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-broth-950">All</button>
+                    <button onclick="setOwnerTypeFilter('dine-in')" data-otype="dine-in" class="owner-type-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-stone-600 border border-stone-200">Dine-in</button>
+                    <button onclick="setOwnerTypeFilter('take-out')" data-otype="take-out" class="owner-type-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-stone-600 border border-stone-200">Take-out</button>
+                    <button onclick="setOwnerTypeFilter('delivery')" data-otype="delivery" class="owner-type-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-stone-600 border border-stone-200">Delivery</button>
+                </div>
+            </div>
+
+            <!-- Live Incoming Orders Feed -->
+            <div id="owner-orders-container" class="px-4 pt-3 space-y-3">
+                <!-- Populated dynamically via Firestore real-time listener -->
+            </div>
+        </main>
+
+        <!-- ========================================================= -->
+        <!-- CHECKOUT & ORDER TYPE DRAWER MODAL                        -->
+        <!-- ========================================================= -->
+        <div id="checkout-modal" class="hidden fixed sm:absolute inset-0 z-40 bg-black/65 backdrop-blur-xs flex flex-col justify-end">
+            <div class="bg-broth-50 rounded-t-[32px] max-h-[90%] flex flex-col shadow-2xl animate-slide-up border-t border-amber-200">
+                <!-- Modal Drag Handle & Header -->
+                <div class="px-5 pt-3 pb-3 border-b border-broth-200/80 flex items-center justify-between bg-white rounded-t-[32px]">
+                    <div>
+                        <h3 class="font-display font-extrabold text-lg text-broth-950">Your Batchoy Order</h3>
+                        <p class="text-xs text-broth-600">Review items & choose service option</p>
+                    </div>
+                    <button onclick="closeCheckoutModal()" class="w-8 h-8 rounded-full bg-broth-100 text-broth-900 flex items-center justify-center hover:bg-broth-200">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+
+                <!-- Scrollable Checkout Body -->
+                <div class="p-4 overflow-y-auto space-y-5 flex-1">
+                    
+                    <!-- 1. Cart Items List -->
+                    <div class="bg-white rounded-2xl p-3.5 border border-broth-200/70 shadow-2xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-broth-700">Order Items</span>
+                            <button onclick="clearCart()" class="text-xs font-semibold text-red-600 hover:underline">Clear All</button>
+                        </div>
+                        <div id="checkout-items-list" class="divide-y divide-broth-100">
+                            <!-- Cart items rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- 2. Order Type Selector (Dine-in / Take-out / Delivery) -->
+                    <div class="space-y-2.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-broth-800">How would you like your Batchoy?</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <!-- Dine-in -->
+                            <button type="button" onclick="selectOrderType('dine-in')" id="type-card-dine-in" class="order-type-card p-3 rounded-2xl border-2 border-amber-500 bg-amber-50 text-broth-950 flex flex-col items-center text-center transition-all shadow-2xs">
+                                <svg class="w-5 h-5 text-broth-700 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M5 10v10M19 10v10M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>
+                                <span class="text-xs font-extrabold">Dine-in</span>
+                                <span class="text-[10px] text-broth-600">Table Service</span>
+                            </button>
+                            <!-- Take-out -->
+                            <button type="button" onclick="selectOrderType('take-out')" id="type-card-take-out" class="order-type-card p-3 rounded-2xl border-2 border-broth-200 bg-white text-broth-700 flex flex-col items-center text-center transition-all">
+                                <svg class="w-5 h-5 text-broth-600 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                <span class="text-xs font-extrabold">Take-out</span>
+                                <span class="text-[10px] text-broth-500">Counter Pickup</span>
+                            </button>
+                            <!-- Delivery -->
+                            <button type="button" onclick="selectOrderType('delivery')" id="type-card-delivery" class="order-type-card p-3 rounded-2xl border-2 border-broth-200 bg-white text-broth-700 flex flex-col items-center text-center transition-all">
+                                <svg class="w-5 h-5 text-broth-600 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+                                <span class="text-xs font-extrabold">Delivery</span>
+                                <span class="text-[10px] text-broth-500">+₱45 Rider Fee</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Dynamic Customer Details Form -->
+                    <div class="bg-white rounded-2xl p-4 border border-broth-200/70 space-y-3 shadow-2xs">
+                        <div>
+                            <label class="block text-xs font-bold text-broth-900 mb-1">Your Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="input-customer-name" placeholder="e.g., Juan Dela Cruz" class="w-full px-3.5 py-2.5 rounded-xl bg-broth-50 border border-broth-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white">
+                        </div>
+
+                        <!-- Conditional: Dine-In Fields -->
+                        <div id="fields-dine-in" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-broth-900 mb-1">Table Number <span class="text-red-500">*</span></label>
+                                <input type="text" id="input-table-number" placeholder="e.g., Table 04" class="w-full px-3.5 py-2.5 rounded-xl bg-broth-50 border border-broth-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white">
+                            </div>
+                        </div>
+
+                        <!-- Conditional: Take-Out Fields -->
+                        <div id="fields-take-out" class="hidden space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-broth-900 mb-1">Estimated Pickup Time</label>
+                                <select id="input-pickup-time" class="w-full px-3.5 py-2.5 rounded-xl bg-broth-50 border border-broth-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white">
+                                    <option value="ASAP (15-20 mins)">ASAP (15-20 mins)</option>
+                                    <option value="In 30 minutes">In 30 minutes</option>
+                                    <option value="In 45 minutes">In 45 minutes</option>
+                                    <option value="In 1 hour">In 1 hour</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-broth-900 mb-1">Mobile Number (Optional)</label>
+                                <input type="tel" id="input-takeout-phone" placeholder="09XX XXX XXXX" class="w-full px-3.5 py-2.5 rounded-xl bg-broth-50 border border-broth-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white">
+                            </div>
+                        </div>
+
+                        <!-- Conditional: Delivery Fields -->
+                        <div id="fields-delivery" class="hidden space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-broth-900 mb-1">Contact Mobile Number <span class="text-red-500">*</span></label>
+                                <input type="tel" id="input-delivery-phone" placeholder="e.g., 0917 123 4567" class="w-full px-3.5 py-2.5 rounded-xl bg-broth-50 border border-broth-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-broth-900 mb-1">Complete Delivery Address <span class="text-red-500">*</span></label>
+                                <textarea id="input-delivery-address" rows="2" placeholder="House/Unit #, Street, Barangay, City/Municipality" class="w-full px-3.5 py-2.5 rounded-xl bg-broth-50 border border-broth-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-broth-900 mb-1">Landmark / Broth Notes</label>
+                                <input type="text" id="input-delivery-landmark" placeholder="e.g., Near blue gate / Separate broth & noodles" class="w-full px-3.5 py-2.5 rounded-xl bg-broth-50 border border-broth-200 text-sm focus:outline-none focus:border-amber-500 focus:bg-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Price Summary -->
+                    <div class="bg-broth-900 text-amber-50 rounded-2xl p-4 space-y-2">
+                        <div class="flex justify-between text-xs text-amber-200/80">
+                            <span>Subtotal</span>
+                            <span id="summary-subtotal">₱0.00</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-amber-200/80">
+                            <span>Delivery Fee</span>
+                            <span id="summary-delivery-fee">₱0.00</span>
+                        </div>
+                        <div class="border-t border-broth-700 pt-2 flex justify-between items-center">
+                            <span class="font-bold text-sm">Grand Total</span>
+                            <span id="summary-grand-total" class="font-display font-extrabold text-xl text-amber-400">₱0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sticky Submit Order Footer -->
+                <div class="p-4 bg-white border-t border-broth-200">
+                    <button id="btn-submit-order" onclick="submitOrderToFirebase()" class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-broth-600 hover:from-amber-400 hover:to-broth-500 text-broth-950 font-display font-extrabold text-base shadow-lg active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                        <span>Place Batchoy Order</span>
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- OPTIONAL SHOP OWNER PIN MODAL (Quick 1-tap bypass/PIN)    -->
+        <!-- ========================================================= -->
+        <div id="owner-pin-modal" class="hidden fixed sm:absolute inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-5">
+            <div class="bg-white rounded-3xl w-full max-w-[340px] p-6 shadow-2xl text-center space-y-4">
+                <div class="w-12 h-12 rounded-2xl bg-broth-900 text-amber-400 mx-auto flex items-center justify-center">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-display font-extrabold text-lg text-broth-950">Shop Owner Access</h3>
+                    <p class="text-xs text-stone-500 mt-1">Enter Kitchen PIN (Default: <strong class="text-broth-800">1234</strong>) or tap Quick Demo Access below.</p>
+                </div>
+                <input type="password" id="owner-pin-input" maxlength="4" inputmode="numeric" placeholder="••••" class="w-full text-center tracking-[0.6em] font-display font-extrabold text-2xl py-3 rounded-2xl bg-stone-100 border border-stone-300 focus:outline-none focus:border-amber-500">
+                <div class="flex flex-col gap-2 pt-1">
+                    <button onclick="verifyOwnerPin()" class="w-full py-3 rounded-xl bg-broth-900 text-amber-400 font-bold text-sm hover:bg-broth-800">Unlock Kitchen Dashboard</button>
+                    <button onclick="bypassOwnerPin()" class="w-full py-2.5 rounded-xl bg-amber-100 text-broth-900 font-bold text-xs hover:bg-amber-200">Quick Demo Access (Skip PIN)</button>
+                    <button onclick="closeOwnerPinModal()" class="text-xs text-stone-400 hover:text-stone-600 pt-1">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- FIREBASE & APPLICATION LOGIC                              -->
+    <!-- ========================================================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // -------------------------------------------------------------
+        // 1. MENU DATA (Authentic Iloilo La Paz Batchoy & Sides)
+        // -------------------------------------------------------------
+        const MENU_ITEMS = [
+            {
+                id: 'super-batchoy',
+                name: 'Super La Paz Batchoy',
+                category: 'batchoy',
+                price: 145,
+                badge: 'Bestseller',
+                desc: 'Full bowl loaded with pork loin, liver, heart, crispy chicharon, poached egg, toasted garlic & bone marrow.',
+                tagColor: 'bg-amber-100 text-broth-900'
+            },
+            {
+                id: 'extra-large-special',
+                name: 'Extra Large Mega Batchoy',
+                category: 'batchoy',
+                price: 185,
+                badge: 'Giant Bowl',
+                desc: 'Double miki noodles, double meat & innards, extra crispy chicharon, two eggs & rich marrow broth.',
+                tagColor: 'bg-red-100 text-red-900'
+            },
+            {
+                id: 'classic-batchoy',
+                name: 'Classic Batchoy Original',
+                category: 'batchoy',
+                price: 110,
+                badge: 'Traditional',
+                desc: 'Authentic savory guinamos-infused pork & beef broth with fresh miki noodles, pork slices & chicharon.',
+                tagColor: 'bg-broth-100 text-broth-800'
+            },
+            {
+                id: 'miswa-batchoy',
+                name: 'Silky Miswa Batchoy',
+                category: 'batchoy',
+                price: 120,
+                badge: 'Light & Silky',
+                desc: 'Delicate wheat miswa noodles swimming in our signature 8-hour simmered broth with crushed chicharon.',
+                tagColor: 'bg-emerald-100 text-emerald-900'
+            },
+            {
+                id: 'puto-manapla',
+                name: 'Puto Manapla (3 pcs)',
+                category: 'sides',
+                price: 35,
+                badge: 'Must Pair',
+                desc: 'Soft, slightly sweet steamed rice cakes wrapped in banana leaves—the classic Iloilo batchoy partner.',
+                tagColor: 'bg-amber-100 text-broth-900'
+            },
+            {
+                id: 'extra-chicharon',
+                name: 'Cup of Crispy Chicharon',
+                category: 'sides',
+                price: 45,
+                badge: 'Crunchy',
+                desc: 'Freshly popped golden pork cracklings for maximum crunch in every spoonful.',
+                tagColor: 'bg-broth-100 text-broth-800'
+            },
+            {
+                id: 'steamed-rice',
+                name: 'Steamed Jasmine Rice',
+                category: 'sides',
+                price: 25,
+                badge: 'Side',
+                desc: 'Fluffy warm white rice to pair with leftover savory batchoy soup.',
+                tagColor: 'bg-stone-100 text-stone-700'
+            },
+            {
+                id: 'extra-egg',
+                name: 'Fresh Native Egg',
+                category: 'sides',
+                price: 20,
+                badge: 'Add-on',
+                desc: 'Cracked directly into your piping hot broth so it poaches to creamy perfection.',
+                tagColor: 'bg-amber-50 text-amber-900'
+            },
+            {
+                id: 'iced-calamansi',
+                name: 'Fresh Calamansi Juice',
+                category: 'drinks',
+                price: 45,
+                badge: 'Refreshing',
+                desc: 'Chilled freshly squeezed Philippine lime juice with a touch of honey.',
+                tagColor: 'bg-emerald-100 text-emerald-900'
+            },
+            {
+                id: 'softdrinks-can',
+                name: 'Iced Cola / Softdrink',
+                category: 'drinks',
+                price: 40,
+                badge: 'Chilled',
+                desc: 'Ice-cold 330ml canned soda to cut through the rich savory broth.',
+                tagColor: 'bg-sky-100 text-sky-900'
+            }
+        ];
+
+        // -------------------------------------------------------------
+        // 2. APP STATE
+        // -------------------------------------------------------------
+        let state = {
+            mode: 'customer', // 'customer' | 'owner'
+            customerSubTab: 'menu', // 'menu' | 'tracker'
+            selectedCategory: 'all',
+            cart: {}, // { itemId: quantity }
+            orderType: 'dine-in', // 'dine-in' | 'take-out' | 'delivery'
+            orders: [], // Live orders synced from Firestore
+            myOrderIds: [], // Track orders placed in this session + userId match
+            ownerStatusFilter: 'active',
+            ownerTypeFilter: 'all',
+            ownerUnlocked: false,
+            user: null,
+            db: null,
+            appId: 'batchoy-express-app'
+        };
+
+        const DELIVERY_FEE = 45;
+
+        // -------------------------------------------------------------
+        // 3. FIREBASE INITIALIZATION & REAL-TIME SYNC
+        // -------------------------------------------------------------
+        async function initFirebase() {
+            const connDot = document.getElementById('connection-dot');
+            const connText = document.getElementById('connection-text');
+
+            try {
+                const firebaseConfig = typeof __firebase_config !== 'undefined' 
+                    ? JSON.parse(__firebase_config) 
+                    : null;
+
+                state.appId = typeof __app_id !== 'undefined' ? __app_id : 'batchoy-express-default';
+
+                if (!firebaseConfig) {
+                    throw new Error("Missing Firebase config");
+                }
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                state.db = getFirestore(app);
+
+                // Rule 3: Authenticate BEFORE any Firestore queries
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        state.user = user;
+                        connDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                        connText.textContent = "Live Kitchen Sync";
+                        subscribeToOrders();
+                    }
+                });
+
+            } catch (err) {
+                console.error("Firebase init error:", err);
+                connDot.className = "w-2 h-2 rounded-full bg-red-400";
+                connText.textContent = "Offline Demo Mode";
+                showToast("Running in local fallback mode.", "warning");
+            }
+        }
+
+        function subscribeToOrders() {
+            // Rule 3: Guard every Firestore operation with user check
+            if (!state.user || !state.db) return;
+
+            // Rule 1: Strict public collection path so both Customer & Shop Owner see live orders
+            const ordersColRef = collection(state.db, 'artifacts', state.appId, 'public', 'data', 'batchoy_orders');
+
+            // Rule 2: Simple collection query without orderBy/where; sort in JS memory
+            onSnapshot(ordersColRef, (snapshot) => {
+                const fetched = [];
+                snapshot.forEach((docSnap) => {
+                    fetched.push({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    });
+                });
+
+                // Sort newest first in memory
+                fetched.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+                state.orders = fetched;
+
+                updateBadgesAndStats();
+                renderCustomerTracker();
+                renderOwnerOrders();
+            }, (error) => {
+                console.error("Firestore onSnapshot error:", error);
+                showToast("Sync interrupted. Check permissions.", "error");
+            });
+        }
+
+        // -------------------------------------------------------------
+        // 4. CUSTOMER MENU & CART LOGIC
+        // -------------------------------------------------------------
+        window.filterMenuCategory = function(cat) {
+            state.selectedCategory = cat;
+            document.querySelectorAll('.menu-cat-pill').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = "menu-cat-pill px-3.5 py-1.5 rounded-full text-xs font-bold bg-broth-900 text-amber-50 whitespace-nowrap transition-all shadow-xs";
+                } else {
+                    btn.className = "menu-cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-broth-800 border border-broth-200 whitespace-nowrap transition-all hover:bg-broth-100";
+                }
+            });
+            renderMenu();
+        };
+
+        function getFoodIllustrationSVG(category, id) {
+            if (category === 'batchoy') {
+                return `
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-broth-800 to-broth-950 flex flex-col items-center justify-center text-amber-400 shrink-0 relative overflow-hidden border border-broth-700/40 shadow-inner">
+                    <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M3 11h18a1 1 0 0 1 1 1v.5a8.5 8.5 0 0 1-8.5 8.5h-3A8.5 8.5 0 0 1 2 12.5V12a1 1 0 0 1 1-1Z" fill="rgba(245, 158, 11, 0.15)"/>
+                        <path d="M8 21l-1 2h10l-1-2"/>
+                        <path d="M8 7c0-1.5 1-2 1-3.5"/>
+                        <path d="M12 7c0-1.5 1-2 1-3.5"/>
+                        <path d="M16 7c0-1.5 1-2 1-3.5"/>
+                    </svg>
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-amber-200/90 mt-0.5">Hot Bowl</span>
+                </div>`;
+            } else if (category === 'sides') {
+                return `
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200/80 flex flex-col items-center justify-center text-broth-800 shrink-0 border border-amber-300/60">
+                    <svg class="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <circle cx="12" cy="13" r="7" fill="rgba(180, 83, 9, 0.12)"/>
+                        <path d="M8 12c1.5-2 6.5-2 8 0"/>
+                        <path d="M9 15c1.5 1 4.5 1 6 0"/>
+                    </svg>
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-broth-700 mt-0.5">Side</span>
+                </div>`;
+            } else {
+                return `
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-200/70 flex flex-col items-center justify-center text-emerald-900 shrink-0 border border-emerald-300/60">
+                    <svg class="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M8 2h8l-1 18H9L8 2z" fill="rgba(16, 185, 129, 0.15)"/>
+                        <path d="M12 2v-1l3-1"/>
+                        <path d="M8.5 9h7"/>
+                    </svg>
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-800 mt-0.5">Drink</span>
+                </div>`;
+            }
+        }
+
+        function renderMenu() {
+            const container = document.getElementById('menu-list-container');
+            const items = state.selectedCategory === 'all' 
+                ? MENU_ITEMS 
+                : MENU_ITEMS.filter(i => i.category === state.selectedCategory);
+
+            container.innerHTML = items.map(item => {
+                const qty = state.cart[item.id] || 0;
+                return `
+                <div class="bg-white rounded-2xl p-3.5 border border-broth-200/70 shadow-2xs flex gap-3.5 items-center transition-all hover:border-amber-400">
+                    ${getFoodIllustrationSVG(item.category, item.id)}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2">
+                            <h3 class="font-display font-bold text-sm text-broth-950 leading-snug">${item.name}</h3>
+                        </div>
+                        <span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${item.tagColor}">${item.badge}</span>
+                        <p class="text-xs text-stone-500 mt-1 line-clamp-2 leading-relaxed">${item.desc}</p>
+                        
+                        <div class="flex items-center justify-between mt-2.5">
+                            <span class="font-display font-extrabold text-base text-broth-900">₱${item.price}</span>
+                            
+                            ${qty === 0 ? `
+                                <button onclick="updateCartQty('${item.id}', 1)" class="px-3.5 py-1.5 rounded-xl bg-broth-900 hover:bg-broth-800 active:scale-95 text-amber-400 text-xs font-bold flex items-center gap-1 shadow-xs transition-all">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Add
+                                </button>
+                            ` : `
+                                <div class="flex items-center gap-2 bg-broth-100 rounded-xl p-1 border border-broth-200">
+                                    <button onclick="updateCartQty('${item.id}', -1)" class="w-7 h-7 rounded-lg bg-white text-broth-950 font-bold flex items-center justify-center shadow-2xs active:scale-90">−</button>
+                                    <span class="w-5 text-center font-display font-extrabold text-xs text-broth-950">${qty}</span>
+                                    <button onclick="updateCartQty('${item.id}', 1)" class="w-7 h-7 rounded-lg bg-broth-900 text-amber-400 font-bold flex items-center justify-center shadow-2xs active:scale-90">+</button>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.updateCartQty = function(itemId, delta) {
+            const current = state.cart[itemId] || 0;
+            const next = current + delta;
+            if (next <= 0) {
+                delete state.cart[itemId];
+            } else {
+                state.cart[itemId] = next;
+            }
+            renderMenu();
+            updateCartUI();
+        };
+
+        window.clearCart = function() {
+            state.cart = {};
+            renderMenu();
+            updateCartUI();
+            closeCheckoutModal();
+            showToast("Basket cleared.", "info");
+        };
+
+        function getCartTotals() {
+            let itemCount = 0;
+            let subtotal = 0;
+            const detailedItems = [];
+
+            for (const [id, qty] of Object.entries(state.cart)) {
+                const menuItem = MENU_ITEMS.find(m => m.id === id);
+                if (menuItem && qty > 0) {
+                    itemCount += qty;
+                    subtotal += menuItem.price * qty;
+                    detailedItems.push({
+                        id: menuItem.id,
+                        name: menuItem.name,
+                        price: menuItem.price,
+                        qty: qty,
+                        lineTotal: menuItem.price * qty
+                    });
+                }
+            }
+
+            const deliveryFee = (state.orderType === 'delivery' && itemCount > 0) ? DELIVERY_FEE : 0;
+            const grandTotal = subtotal + deliveryFee;
+            return { itemCount, subtotal, deliveryFee, grandTotal, detailedItems };
+        }
+
+        function updateCartUI() {
+            const { itemCount, subtotal, deliveryFee, grandTotal, detailedItems } = getCartTotals();
+            const floatingBar = document.getElementById('floating-cart-bar');
+
+            if (itemCount > 0 && state.mode === 'customer' && state.customerSubTab === 'menu') {
+                floatingBar.classList.remove('hidden');
+            } else {
+                floatingBar.classList.add('hidden');
+            }
+
+            document.getElementById('cart-bar-count').textContent = itemCount;
+            document.getElementById('cart-bar-total').textContent = `₱${grandTotal}`;
+            
+            const typeLabels = {
+                'dine-in': 'Dine-in • Table Service',
+                'take-out': 'Take-out • Counter Pickup',
+                'delivery': 'Delivery • +₱45 Rider Fee'
+            };
+            document.getElementById('cart-bar-type-hint').textContent = typeLabels[state.orderType];
+
+            // Update Checkout Modal List & Totals
+            const checkoutList = document.getElementById('checkout-items-list');
+            if (checkoutList) {
+                checkoutList.innerHTML = detailedItems.map(item => `
+                    <div class="py-2.5 flex items-center justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-bold text-broth-950 truncate">${item.name}</p>
+                            <p class="text-[11px] text-stone-500">₱${item.price} each</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="updateCartQty('${item.id}', -1)" class="w-6 h-6 rounded-lg bg-broth-100 text-broth-900 font-bold text-xs flex items-center justify-center">−</button>
+                            <span class="w-4 text-center text-xs font-extrabold">${item.qty}</span>
+                            <button onclick="updateCartQty('${item.id}', 1)" class="w-6 h-6 rounded-lg bg-broth-900 text-amber-400 font-bold text-xs flex items-center justify-center">+</button>
+                        </div>
+                        <span class="text-xs font-extrabold text-broth-900 w-14 text-right">₱${item.lineTotal}</span>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('summary-subtotal').textContent = `₱${subtotal.toFixed(2)}`;
+            document.getElementById('summary-delivery-fee').textContent = `₱${deliveryFee.toFixed(2)}`;
+            document.getElementById('summary-grand-total').textContent = `₱${grandTotal.toFixed(2)}`;
+        }
+
+        // -------------------------------------------------------------
+        // 5. CHECKOUT MODAL & ORDER TYPE SELECTION
+        // -------------------------------------------------------------
+        window.openCheckoutModal = function() {
+            const { itemCount } = getCartTotals();
+            if (itemCount === 0) {
+                showToast("Add some delicious Batchoy first!", "warning");
+                return;
+            }
+            updateCartUI();
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        };
+
+        window.closeCheckoutModal = function() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        };
+
+        window.selectOrderType = function(type) {
+            state.orderType = type;
+            
+            // Update Card Highlights
+            ['dine-in', 'take-out', 'delivery'].forEach(t => {
+                const card = document.getElementById(`type-card-${t}`);
+                const fields = document.getElementById(`fields-${t}`);
+                if (t === type) {
+                    card.className = "order-type-card p-3 rounded-2xl border-2 border-amber-500 bg-amber-50 text-broth-950 flex flex-col items-center text-center transition-all shadow-2xs";
+                    fields.classList.remove('hidden');
+                } else {
+                    card.className = "order-type-card p-3 rounded-2xl border-2 border-broth-200 bg-white text-broth-700 flex flex-col items-center text-center transition-all opacity-80";
+                    fields.classList.add('hidden');
+                }
+            });
+
+            updateCartUI();
+        };
+
+        window.submitOrderToFirebase = async function() {
+            const { itemCount, subtotal, deliveryFee, grandTotal, detailedItems } = getCartTotals();
+            if (itemCount === 0) return;
+
+            const customerName = document.getElementById('input-customer-name').value.trim();
+            if (!customerName) {
+                showToast("Please enter your name.", "error");
+                document.getElementById('input-customer-name').focus();
+                return;
+            }
+
+            let tableNumber = '';
+            let pickupTime = '';
+            let phone = '';
+            let deliveryAddress = '';
+            let landmark = '';
+
+            if (state.orderType === 'dine-in') {
+                tableNumber = document.getElementById('input-table-number').value.trim();
+                if (!tableNumber) {
+                    showToast("Please enter your Table Number.", "error");
+                    document.getElementById('input-table-number').focus();
+                    return;
+                }
+            } else if (state.orderType === 'take-out') {
+                pickupTime = document.getElementById('input-pickup-time').value;
+                phone = document.getElementById('input-takeout-phone').value.trim();
+            } else if (state.orderType === 'delivery') {
+                phone = document.getElementById('input-delivery-phone').value.trim();
+                deliveryAddress = document.getElementById('input-delivery-address').value.trim();
+                landmark = document.getElementById('input-delivery-landmark').value.trim();
+
+                if (!phone) {
+                    showToast("Contact number is required for delivery.", "error");
+                    document.getElementById('input-delivery-phone').focus();
+                    return;
+                }
+                if (!deliveryAddress) {
+                    showToast("Please enter your complete delivery address.", "error");
+                    document.getElementById('input-delivery-address').focus();
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('btn-submit-order');
+            btn.disabled = true;
+            btn.innerHTML = `<span>Sending to Kitchen...</span>`;
+
+            // Generate short human-friendly Order Number (e.g., BTY-482)
+            const shortCode = `BTY-${Math.floor(100 + Math.random() * 900)}`;
+            const nowMs = Date.now();
+
+            const orderPayload = {
+                orderNumber: shortCode,
+                customerId: state.user ? state.user.uid : 'guest-local',
+                customerName,
+                orderType: state.orderType,
+                tableNumber,
+                pickupTime,
+                phone,
+                deliveryAddress,
+                landmark,
+                items: detailedItems,
+                subtotal,
+                deliveryFee,
+                totalAmount: grandTotal,
+                status: 'pending', // 'pending' -> 'preparing' -> 'ready' -> 'completed' | 'cancelled'
+                createdAtMs: nowMs,
+                createdAtServer: serverTimestamp()
+            };
+
+            try {
+                if (state.db && state.user) {
+                    const ordersColRef = collection(state.db, 'artifacts', state.appId, 'public', 'data', 'batchoy_orders');
+                    const docRef = await addDoc(ordersColRef, orderPayload);
+                    state.myOrderIds.push(docRef.id);
+                } else {
+                    // Fallback local mode
+                    const localId = 'local-' + nowMs;
+                    state.myOrderIds.push(localId);
+                    state.orders.unshift({ id: localId, ...orderPayload });
+                    renderCustomerTracker();
+                    renderOwnerOrders();
+                    updateBadgesAndStats();
+                }
+
+                // Reset cart & switch to Live Tracker
+                state.cart = {};
+                renderMenu();
+                updateCartUI();
+                closeCheckoutModal();
+                switchCustomerSubTab('tracker');
+                showToast(`Order ${shortCode} sent to kitchen!`, "success");
+
+            } catch (error) {
+                console.error("Order submission error:", error);
+                showToast("Failed to place order. Please try again.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Place Batchoy Order</span><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+            }
+        };
+
+        // -------------------------------------------------------------
+        // 6. CUSTOMER LIVE ORDER TRACKER RENDERING
+        // -------------------------------------------------------------
+        window.switchCustomerSubTab = function(sub) {
+            state.customerSubTab = sub;
+            const menuView = document.getElementById('customer-sub-menu');
+            const trackerView = document.getElementById('customer-sub-tracker');
+            const tabMenu = document.getElementById('cust-tab-menu');
+            const tabTracker = document.getElementById('cust-tab-tracker');
+
+            if (sub === 'menu') {
+                menuView.classList.remove('hidden');
+                trackerView.classList.add('hidden');
+                tabMenu.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-broth-900 text-amber-50 shadow-sm transition-all flex items-center justify-center gap-1.5";
+                tabTracker.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-broth-100 text-broth-800 hover:bg-broth-200/70 transition-all flex items-center justify-center gap-1.5 relative";
+            } else {
+                menuView.classList.add('hidden');
+                trackerView.classList.remove('hidden');
+                tabTracker.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-broth-900 text-amber-50 shadow-sm transition-all flex items-center justify-center gap-1.5 relative";
+                tabMenu.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-broth-100 text-broth-800 hover:bg-broth-200/70 transition-all flex items-center justify-center gap-1.5";
+                renderCustomerTracker();
+            }
+            updateCartUI();
+        };
+
+        function renderCustomerTracker() {
+            const container = document.getElementById('customer-orders-container');
+            const myUid = state.user ? state.user.uid : null;
+
+            // Filter orders belonging to this user or placed in this session
+            const myOrders = state.orders.filter(o => 
+                state.myOrderIds.includes(o.id) || (myUid && o.customerId === myUid)
+            );
+
+            if (myOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-3xl p-8 text-center border border-broth-200/70 space-y-3">
+                        <div class="w-14 h-14 rounded-2xl bg-broth-100 text-broth-700 mx-auto flex items-center justify-center">
+                            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11h18a1 1 0 0 1 1 1v.5a8.5 8.5 0 0 1-8.5 8.5h-3A8.5 8.5 0 0 1 2 12.5V12a1 1 0 0 1 1-1Z"/><path d="M8 21l-1 2h10l-1-2"/></svg>
+                        </div>
+                        <h3 class="font-display font-bold text-base text-broth-950">No Active Orders Yet</h3>
+                        <p class="text-xs text-stone-500 max-w-[240px] mx-auto leading-relaxed">Craving authentic La Paz Batchoy? Browse our menu and track your bowl live right here!</p>
+                        <button onclick="switchCustomerSubTab('menu')" class="px-5 py-2.5 rounded-xl bg-broth-900 text-amber-400 text-xs font-bold shadow-sm">Browse Batchoy Menu</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = myOrders.map(order => {
+                const steps = [
+                    { key: 'pending', label: 'Order Received' },
+                    { key: 'preparing', label: 'Simmering Broth' },
+                    { key: 'ready', label: order.orderType === 'delivery' ? 'Out for Delivery' : 'Ready to Serve' },
+                    { key: 'completed', label: 'Completed' }
+                ];
+
+                const statusRank = { 'pending': 0, 'preparing': 1, 'ready': 2, 'completed': 3, 'cancelled': -1 };
+                const currentRank = statusRank[order.status] ?? 0;
+
+                const statusBadgeMap = {
+                    'pending': 'bg-amber-100 text-amber-900 border-amber-300',
+                    'preparing': 'bg-orange-100 text-orange-900 border-orange-300',
+                    'ready': 'bg-emerald-100 text-emerald-900 border-emerald-300',
+                    'completed': 'bg-stone-200 text-stone-700 border-stone-300',
+                    'cancelled': 'bg-red-100 text-red-800 border-red-300'
+                };
+
+                const statusHeadlineMap = {
+                    'pending': 'Waiting for kitchen confirmation...',
+                    'preparing': 'Chef is preparing your piping hot batchoy!',
+                    'ready': order.orderType === 'delivery' ? 'Rider is on the way to your address!' : (order.orderType === 'dine-in' ? `Serving to ${order.tableNumber} shortly!` : 'Ready for pickup at the counter!'),
+                    'completed': 'Enjoy your meal! Salamat gid!',
+                    'cancelled': 'This order was cancelled.'
+                };
+
+                const itemsSummary = (order.items || []).map(i => `${i.qty}x ${i.name}`).join(', ');
+                const timeStr = order.createdAtMs ? new Date(order.createdAtMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+
+                return `
+                <div class="bg-white rounded-3xl p-4 border border-broth-200 shadow-sm space-y-3.5">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-display font-extrabold text-base text-broth-950">${order.orderNumber || 'ORDER'}</span>
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-broth-100 text-broth-800">${order.orderType}</span>
+                            </div>
+                            <p class="text-[11px] text-stone-400 mt-0.5">Placed at ${timeStr}</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusBadgeMap[order.status] || statusBadgeMap.pending} capitalize">
+                            ${order.status === 'ready' && order.orderType === 'delivery' ? 'Out for Delivery' : order.status}
+                        </span>
+                    </div>
+
+                    <!-- Live Status Callout -->
+                    <div class="p-3 rounded-2xl bg-broth-50 border border-broth-200/70 flex items-center gap-3">
+                        <div class="relative flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 text-broth-800 shrink-0">
+                            ${order.status !== 'completed' && order.status !== 'cancelled' ? '<span class="absolute inset-0 rounded-full bg-amber-400 animate-pulse-ring"></span>' : ''}
+                            <svg class="w-4 h-4 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        </div>
+                        <p class="text-xs font-bold text-broth-900 leading-snug">${statusHeadlineMap[order.status] || ''}</p>
+                    </div>
+
+                    <!-- Progress Stepper -->
+                    ${order.status !== 'cancelled' ? `
+                    <div class="grid grid-cols-4 gap-1 pt-1">
+                        ${steps.map((st, idx) => {
+                            const active = idx <= currentRank;
+                            return `
+                            <div class="space-y-1">
+                                <div class="h-1.5 rounded-full ${active ? 'bg-amber-500' : 'bg-stone-200'} transition-all duration-500"></div>
+                                <p class="text-[9px] font-bold leading-tight ${active ? 'text-broth-900' : 'text-stone-400'}">${st.label}</p>
+                            </div>`;
+                        }).join('')}
+                    </div>` : ''}
+
+                    <!-- Service Details -->
+                    <div class="text-xs text-stone-600 bg-stone-50 p-2.5 rounded-xl space-y-1">
+                        <p><strong class="text-broth-900">Customer:</strong> ${order.customerName}</p>
+                        ${order.orderType === 'dine-in' ? `<p><strong class="text-broth-900">Table:</strong> ${order.tableNumber}</p>` : ''}
+                        ${order.orderType === 'take-out' ? `<p><strong class="text-broth-900">Pickup:</strong> ${order.pickupTime || 'ASAP'}</p>` : ''}
+                        ${order.orderType === 'delivery' ? `
+                            <p><strong class="text-broth-900">Address:</strong> ${order.deliveryAddress}</p>
+                            ${order.landmark ? `<p><strong class="text-broth-900">Note:</strong> ${order.landmark}</p>` : ''}
+                        ` : ''}
+                        <p class="pt-1 border-t border-stone-200/80 text-broth-950 font-medium">${itemsSummary}</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xs text-stone-500">Total Amount</span>
+                        <span class="font-display font-extrabold text-base text-broth-950">₱${order.totalAmount}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // -------------------------------------------------------------
+        // 7. SHOP OWNER DASHBOARD LOGIC
+        // -------------------------------------------------------------
+        window.switchAppMode = function(mode) {
+            if (mode === 'owner' && !state.ownerUnlocked) {
+                openOwnerPinModal();
+                return;
+            }
+            applyAppMode(mode);
+        };
+
+        function applyAppMode(mode) {
+            state.mode = mode;
+            const custView = document.getElementById('view-customer');
+            const ownerView = document.getElementById('view-owner');
+            const btnCust = document.getElementById('btn-mode-customer');
+            const btnOwner = document.getElementById('btn-mode-owner');
+
+            if (mode === 'customer') {
+                custView.classList.remove('hidden');
+                ownerView.classList.add('hidden');
+                btnCust.className = "px-2.5 py-1.5 rounded-lg bg-amber-500 text-broth-950 shadow-sm transition-all flex items-center gap-1 font-bold";
+                btnOwner.className = "px-2.5 py-1.5 rounded-lg text-amber-200/80 hover:text-white transition-all flex items-center gap-1 relative";
+            } else {
+                custView.classList.add('hidden');
+                ownerView.classList.remove('hidden');
+                btnOwner.className = "px-2.5 py-1.5 rounded-lg bg-amber-500 text-broth-950 shadow-sm transition-all flex items-center gap-1 relative font-bold";
+                btnCust.className = "px-2.5 py-1.5 rounded-lg text-amber-200/80 hover:text-white transition-all flex items-center gap-1";
+                renderOwnerOrders();
+            }
+            updateCartUI();
+        }
+
+        window.openOwnerPinModal = function() {
+            document.getElementById('owner-pin-input').value = '';
+            document.getElementById('owner-pin-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('owner-pin-input').focus(), 100);
+        };
+
+        window.closeOwnerPinModal = function() {
+            document.getElementById('owner-pin-modal').classList.add('hidden');
+        };
+
+        window.verifyOwnerPin = function() {
+            const val = document.getElementById('owner-pin-input').value.trim();
+            if (val === '1234') {
+                state.ownerUnlocked = true;
+                closeOwnerPinModal();
+                applyAppMode('owner');
+                showToast("Kitchen Dashboard unlocked.", "success");
+            } else {
+                showToast("Incorrect PIN. Try 1234 or Quick Demo Access.", "error");
+            }
+        };
+
+        window.bypassOwnerPin = function() {
+            state.ownerUnlocked = true;
+            closeOwnerPinModal();
+            applyAppMode('owner');
+            showToast("Demo Kitchen Mode activated.", "info");
+        };
+
+        window.setOwnerStatusFilter = function(status) {
+            state.ownerStatusFilter = status;
+            document.querySelectorAll('.owner-status-pill').forEach(btn => {
+                if (btn.dataset.ostatus === status) {
+                    btn.className = "owner-status-pill px-3 py-1.5 rounded-xl text-xs font-bold bg-broth-900 text-amber-50 whitespace-nowrap";
+                } else {
+                    btn.className = "owner-status-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-stone-700 border border-stone-200 whitespace-nowrap";
+                }
+            });
+            renderOwnerOrders();
+        };
+
+        window.setOwnerTypeFilter = function(type) {
+            state.ownerTypeFilter = type;
+            document.querySelectorAll('.owner-type-pill').forEach(btn => {
+                if (btn.dataset.otype === type) {
+                    btn.className = "owner-type-pill px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-broth-950";
+                } else {
+                    btn.className = "owner-type-pill px-2.5 py-1 rounded-lg font-semibold bg-white text-stone-600 border border-stone-200";
+                }
+            });
+            renderOwnerOrders();
+        };
+
+        function updateBadgesAndStats() {
+            const activeStatuses = ['pending', 'preparing', 'ready'];
+            const activeOrders = state.orders.filter(o => activeStatuses.includes(o.status));
+            const pendingOrders = state.orders.filter(o => o.status === 'pending');
+            const preparingOrders = state.orders.filter(o => o.status === 'preparing');
+            const readyOrders = state.orders.filter(o => o.status === 'ready');
+
+            // Revenue excludes cancelled orders
+            const validOrders = state.orders.filter(o => o.status !== 'cancelled');
+            const totalRevenue = validOrders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+
+            document.getElementById('stat-active-orders').textContent = activeOrders.length;
+            document.getElementById('stat-total-orders').textContent = validOrders.length;
+            document.getElementById('stat-total-revenue').textContent = `₱${totalRevenue.toLocaleString()}`;
+
+            document.getElementById('count-active').textContent = activeOrders.length;
+            document.getElementById('count-pending').textContent = pendingOrders.length;
+            document.getElementById('count-preparing').textContent = preparingOrders.length;
+            document.getElementById('count-ready').textContent = readyOrders.length;
+
+            // Top bar pending badge
+            const ownerBadge = document.getElementById('owner-pending-badge');
+            if (pendingOrders.length > 0) {
+                ownerBadge.textContent = pendingOrders.length;
+                ownerBadge.classList.remove('hidden');
+            } else {
+                ownerBadge.classList.add('hidden');
+            }
+
+            // Customer active order indicator dot
+            const myUid = state.user ? state.user.uid : null;
+            const hasMyActive = state.orders.some(o => 
+                (state.myOrderIds.includes(o.id) || (myUid && o.customerId === myUid)) && 
+                activeStatuses.includes(o.status)
+            );
+            const custDot = document.getElementById('cust-active-dot');
+            if (hasMyActive) custDot.classList.remove('hidden');
+            else custDot.classList.add('hidden');
+        }
+
+        function renderOwnerOrders() {
+            const container = document.getElementById('owner-orders-container');
+            let filtered = [...state.orders];
+
+            if (state.ownerStatusFilter === 'active') {
+                filtered = filtered.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
+            } else if (state.ownerStatusFilter !== 'all') {
+                filtered = filtered.filter(o => o.status === state.ownerStatusFilter);
+            }
+
+            if (state.ownerTypeFilter !== 'all') {
+                filtered = filtered.filter(o => o.orderType === state.ownerTypeFilter);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-3xl p-8 text-center border border-stone-200 space-y-2 mt-2">
+                        <div class="w-12 h-12 rounded-2xl bg-stone-100 text-stone-400 mx-auto flex items-center justify-center">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
+                        </div>
+                        <h3 class="font-display font-bold text-sm text-stone-800">No Orders in This View</h3>
+                        <p class="text-xs text-stone-500">New customer orders placed in the Order tab appear here instantaneously.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(order => {
+                const typeColors = {
+                    'dine-in': 'bg-indigo-100 text-indigo-900 border-indigo-200',
+                    'take-out': 'bg-amber-100 text-amber-900 border-amber-200',
+                    'delivery': 'bg-rose-100 text-rose-900 border-rose-200'
+                };
+
+                const statusColors = {
+                    'pending': 'bg-amber-500 text-broth-950',
+                    'preparing': 'bg-orange-500 text-white',
+                    'ready': 'bg-emerald-600 text-white',
+                    'completed': 'bg-stone-600 text-white',
+                    'cancelled': 'bg-red-600 text-white'
+                };
+
+                const timeStr = order.createdAtMs ? new Date(order.createdAtMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now';
+
+                // Action Button Progression
+                let primaryActionBtn = '';
+                if (order.status === 'pending') {
+                    primaryActionBtn = `<button onclick="updateOrderStatus('${order.id}', 'preparing')" class="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-broth-950 font-bold text-xs shadow-xs active:scale-98 transition-all">Accept & Prepare</button>`;
+                } else if (order.status === 'preparing') {
+                    const readyText = order.orderType === 'delivery' ? 'Dispatch for Delivery' : 'Mark Ready to Serve';
+                    primaryActionBtn = `<button onclick="updateOrderStatus('${order.id}', 'ready')" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs active:scale-98 transition-all">${readyText}</button>`;
+                } else if (order.status === 'ready') {
+                    primaryActionBtn = `<button onclick="updateOrderStatus('${order.id}', 'completed')" class="flex-1 py-2.5 px-3 rounded-xl bg-broth-900 hover:bg-broth-800 text-amber-400 font-bold text-xs shadow-xs active:scale-98 transition-all">Complete Order</button>`;
+                }
+
+                const cancelBtn = (order.status === 'pending' || order.status === 'preparing') 
+                    ? `<button onclick="updateOrderStatus('${order.id}', 'cancelled')" class="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs border border-red-200">Cancel</button>` 
+                    : '';
+
+                return `
+                <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-2xs space-y-3">
+                    <!-- Top Row -->
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-display font-extrabold text-base text-broth-950">${order.orderNumber || 'ORDER'}</span>
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${typeColors[order.orderType] || 'bg-stone-100'}">${order.orderType}</span>
+                                <span class="text-[11px] text-stone-400 font-medium">${timeStr}</span>
+                            </div>
+                            <p class="text-xs font-bold text-stone-800 mt-1">${order.customerName} ${order.phone ? `• <span class="text-broth-700">${order.phone}</span>` : ''}</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide ${statusColors[order.status] || 'bg-stone-500 text-white'}">
+                            ${order.status === 'ready' && order.orderType === 'delivery' ? 'Out for Delivery' : order.status}
+                        </span>
+                    </div>
+
+                    <!-- Location / Table / Delivery Address Box -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 text-xs">
+                        ${order.orderType === 'dine-in' ? `
+                            <p class="font-bold text-indigo-950">Table Assignment: <span class="text-indigo-700">${order.tableNumber}</span></p>
+                        ` : ''}
+                        ${order.orderType === 'take-out' ? `
+                            <p class="font-bold text-amber-950">Pickup Schedule: <span class="text-amber-800">${order.pickupTime || 'ASAP'}</span></p>
+                        ` : ''}
+                        ${order.orderType === 'delivery' ? `
+                            <p class="font-bold text-rose-950">Deliver To:</p>
+                            <p class="text-stone-700 mt-0.5 leading-snug">${order.deliveryAddress}</p>
+                            ${order.landmark ? `<p class="text-[11px] text-stone-500 mt-1 italic">Note: ${order.landmark}</p>` : ''}
+                        ` : ''}
+                    </div>
+
+                    <!-- Itemized List -->
+                    <div class="space-y-1.5 border-t border-b border-stone-100 py-2">
+                        ${(order.items || []).map(item => `
+                            <div class="flex justify-between text-xs">
+                                <span class="text-stone-800 font-medium"><strong class="text-broth-900 font-extrabold">${item.qty}×</strong> ${item.name}</span>
+                                <span class="text-stone-600 font-semibold">₱${item.lineTotal}</span>
+                            </div>
+                        `).join('')}
+                        ${order.deliveryFee > 0 ? `
+                            <div class="flex justify-between text-[11px] text-stone-400 pt-1">
+                                <span>Delivery Rider Fee</span>
+                                <span>₱${order.deliveryFee}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Total & Action Buttons -->
+                    <div class="flex items-center justify-between pt-0.5">
+                        <div>
+                            <span class="text-[10px] text-stone-400 uppercase font-bold block">Total Paid/Due</span>
+                            <span class="font-display font-extrabold text-base text-broth-950">₱${order.totalAmount}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${cancelBtn}
+                            ${primaryActionBtn}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.updateOrderStatus = async function(orderId, newStatus) {
+            try {
+                if (state.db && state.user && !orderId.startsWith('local-')) {
+                    const orderDocRef = doc(state.db, 'artifacts', state.appId, 'public', 'data', 'batchoy_orders', orderId);
+                    await updateDoc(orderDocRef, { status: newStatus });
+                } else {
+                    const idx = state.orders.findIndex(o => o.id === orderId);
+                    if (idx !== -1) {
+                        state.orders[idx].status = newStatus;
+                        updateBadgesAndStats();
+                        renderOwnerOrders();
+                        renderCustomerTracker();
+                    }
+                }
+                showToast(`Order marked as ${newStatus.toUpperCase()}.`, "success");
+            } catch (error) {
+                console.error("Failed to update status:", error);
+                showToast("Could not update order status.", "error");
+            }
+        };
+
+        // -------------------------------------------------------------
+        // 8. TOAST NOTIFICATIONS & BOOTSTRAP
+        // -------------------------------------------------------------
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const styles = {
+                success: 'bg-emerald-900 text-emerald-50 border-emerald-500/40',
+                error: 'bg-red-900 text-red-50 border-red-500/40',
+                warning: 'bg-amber-900 text-amber-50 border-amber-500/40',
+                info: 'bg-broth-950 text-amber-100 border-amber-500/30'
+            };
+
+            toast.className = `${styles[type] || styles.info} border px-4 py-2.5 rounded-2xl shadow-xl text-xs font-semibold flex items-center justify-between gap-2 transition-all duration-300 pointer-events-auto`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-8px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // Initialize UI & Firebase on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderMenu();
+            selectOrderType('dine-in');
+            initFirebase();
+        });
+    </script>
+</body>
+</html>
+```
