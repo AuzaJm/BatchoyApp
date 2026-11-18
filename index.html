@@ -1,22 +1,3 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyADVQf9BvGuBf8hwrTcHm3Zanp7r9ga8c4",
-  authDomain: "indaybatchoy.firebaseapp.com",
-  projectId: "indaybatchoy",
-  storageBucket: "indaybatchoy.firebasestorage.app",
-  messagingSenderId: "683564615455",
-  appId: "1:683564615455:web:1ac82b8ffc3198b994122a"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -456,7 +437,7 @@ const app = initializeApp(firebaseConfig);
     <!-- ========================================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // -------------------------------------------------------------
@@ -571,7 +552,7 @@ const app = initializeApp(firebaseConfig);
             ownerUnlocked: false,
             user: null,
             db: null,
-            appId: 'batchoy-express-app'
+            appId: 'indaybatchoy-app'
         };
 
         const DELIVERY_FEE = 45;
@@ -584,26 +565,24 @@ const app = initializeApp(firebaseConfig);
             const connText = document.getElementById('connection-text');
 
             try {
-                const firebaseConfig = typeof __firebase_config !== 'undefined' 
-                    ? JSON.parse(__firebase_config) 
-                    : null;
+                // Your actual Firebase project configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyADVQf9BvGuBf8hwrTcHm3Zanp7r9ga8c4",
+                    authDomain: "indaybatchoy.firebaseapp.com",
+                    projectId: "indaybatchoy",
+                    storageBucket: "indaybatchoy.firebasestorage.app",
+                    messagingSenderId: "683564615455",
+                    appId: "1:683564615455:web:1ac82b8ffc3198b994122a"
+                };
 
-                state.appId = typeof __app_id !== 'undefined' ? __app_id : 'batchoy-express-default';
-
-                if (!firebaseConfig) {
-                    throw new Error("Missing Firebase config");
-                }
+                state.appId = 'indaybatchoy-app';
 
                 const app = initializeApp(firebaseConfig);
                 const auth = getAuth(app);
                 state.db = getFirestore(app);
 
-                // Rule 3: Authenticate BEFORE any Firestore queries
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Sign in anonymously so users can read/write orders instantly
+                await signInAnonymously(auth);
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
@@ -623,13 +602,10 @@ const app = initializeApp(firebaseConfig);
         }
 
         function subscribeToOrders() {
-            // Rule 3: Guard every Firestore operation with user check
             if (!state.user || !state.db) return;
 
-            // Rule 1: Strict public collection path so both Customer & Shop Owner see live orders
             const ordersColRef = collection(state.db, 'artifacts', state.appId, 'public', 'data', 'batchoy_orders');
 
-            // Rule 2: Simple collection query without orderBy/where; sort in JS memory
             onSnapshot(ordersColRef, (snapshot) => {
                 const fetched = [];
                 snapshot.forEach((docSnap) => {
@@ -639,7 +615,6 @@ const app = initializeApp(firebaseConfig);
                     });
                 });
 
-                // Sort newest first in memory
                 fetched.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
                 state.orders = fetched;
 
@@ -807,7 +782,6 @@ const app = initializeApp(firebaseConfig);
             };
             document.getElementById('cart-bar-type-hint').textContent = typeLabels[state.orderType];
 
-            // Update Checkout Modal List & Totals
             const checkoutList = document.getElementById('checkout-items-list');
             if (checkoutList) {
                 checkoutList.innerHTML = detailedItems.map(item => `
@@ -851,7 +825,6 @@ const app = initializeApp(firebaseConfig);
         window.selectOrderType = function(type) {
             state.orderType = type;
             
-            // Update Card Highlights
             ['dine-in', 'take-out', 'delivery'].forEach(t => {
                 const card = document.getElementById(`type-card-${t}`);
                 const fields = document.getElementById(`fields-${t}`);
@@ -915,7 +888,6 @@ const app = initializeApp(firebaseConfig);
             btn.disabled = true;
             btn.innerHTML = `<span>Sending to Kitchen...</span>`;
 
-            // Generate short human-friendly Order Number (e.g., BTY-482)
             const shortCode = `BTY-${Math.floor(100 + Math.random() * 900)}`;
             const nowMs = Date.now();
 
@@ -933,7 +905,7 @@ const app = initializeApp(firebaseConfig);
                 subtotal,
                 deliveryFee,
                 totalAmount: grandTotal,
-                status: 'pending', // 'pending' -> 'preparing' -> 'ready' -> 'completed' | 'cancelled'
+                status: 'pending',
                 createdAtMs: nowMs,
                 createdAtServer: serverTimestamp()
             };
@@ -944,7 +916,6 @@ const app = initializeApp(firebaseConfig);
                     const docRef = await addDoc(ordersColRef, orderPayload);
                     state.myOrderIds.push(docRef.id);
                 } else {
-                    // Fallback local mode
                     const localId = 'local-' + nowMs;
                     state.myOrderIds.push(localId);
                     state.orders.unshift({ id: localId, ...orderPayload });
@@ -953,7 +924,6 @@ const app = initializeApp(firebaseConfig);
                     updateBadgesAndStats();
                 }
 
-                // Reset cart & switch to Live Tracker
                 state.cart = {};
                 renderMenu();
                 updateCartUI();
@@ -999,7 +969,6 @@ const app = initializeApp(firebaseConfig);
             const container = document.getElementById('customer-orders-container');
             const myUid = state.user ? state.user.uid : null;
 
-            // Filter orders belonging to this user or placed in this session
             const myOrders = state.orders.filter(o => 
                 state.myOrderIds.includes(o.id) || (myUid && o.customerId === myUid)
             );
@@ -1198,7 +1167,6 @@ const app = initializeApp(firebaseConfig);
             const preparingOrders = state.orders.filter(o => o.status === 'preparing');
             const readyOrders = state.orders.filter(o => o.status === 'ready');
 
-            // Revenue excludes cancelled orders
             const validOrders = state.orders.filter(o => o.status !== 'cancelled');
             const totalRevenue = validOrders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
 
@@ -1211,7 +1179,6 @@ const app = initializeApp(firebaseConfig);
             document.getElementById('count-preparing').textContent = preparingOrders.length;
             document.getElementById('count-ready').textContent = readyOrders.length;
 
-            // Top bar pending badge
             const ownerBadge = document.getElementById('owner-pending-badge');
             if (pendingOrders.length > 0) {
                 ownerBadge.textContent = pendingOrders.length;
@@ -1220,7 +1187,6 @@ const app = initializeApp(firebaseConfig);
                 ownerBadge.classList.add('hidden');
             }
 
-            // Customer active order indicator dot
             const myUid = state.user ? state.user.uid : null;
             const hasMyActive = state.orders.some(o => 
                 (state.myOrderIds.includes(o.id) || (myUid && o.customerId === myUid)) && 
@@ -1275,7 +1241,6 @@ const app = initializeApp(firebaseConfig);
 
                 const timeStr = order.createdAtMs ? new Date(order.createdAtMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now';
 
-                // Action Button Progression
                 let primaryActionBtn = '';
                 if (order.status === 'pending') {
                     primaryActionBtn = `<button onclick="updateOrderStatus('${order.id}', 'preparing')" class="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-broth-950 font-bold text-xs shadow-xs active:scale-98 transition-all">Accept & Prepare</button>`;
@@ -1292,7 +1257,6 @@ const app = initializeApp(firebaseConfig);
 
                 return `
                 <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-2xs space-y-3">
-                    <!-- Top Row -->
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <div class="flex items-center gap-2 flex-wrap">
@@ -1307,7 +1271,6 @@ const app = initializeApp(firebaseConfig);
                         </span>
                     </div>
 
-                    <!-- Location / Table / Delivery Address Box -->
                     <div class="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 text-xs">
                         ${order.orderType === 'dine-in' ? `
                             <p class="font-bold text-indigo-950">Table Assignment: <span class="text-indigo-700">${order.tableNumber}</span></p>
@@ -1322,7 +1285,6 @@ const app = initializeApp(firebaseConfig);
                         ` : ''}
                     </div>
 
-                    <!-- Itemized List -->
                     <div class="space-y-1.5 border-t border-b border-stone-100 py-2">
                         ${(order.items || []).map(item => `
                             <div class="flex justify-between text-xs">
@@ -1338,7 +1300,6 @@ const app = initializeApp(firebaseConfig);
                         ` : ''}
                     </div>
 
-                    <!-- Total & Action Buttons -->
                     <div class="flex items-center justify-between pt-0.5">
                         <div>
                             <span class="text-[10px] text-stone-400 uppercase font-bold block">Total Paid/Due</span>
@@ -1399,7 +1360,6 @@ const app = initializeApp(firebaseConfig);
             }, 3000);
         };
 
-        // Initialize UI & Firebase on Load
         window.addEventListener('DOMContentLoaded', () => {
             renderMenu();
             selectOrderType('dine-in');
@@ -1408,4 +1368,3 @@ const app = initializeApp(firebaseConfig);
     </script>
 </body>
 </html>
-```
